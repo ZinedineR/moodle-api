@@ -2,9 +2,7 @@ package handler
 
 import (
 	"crypto"
-	"crypto/rsa"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,14 +10,11 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	redis "moodle-api/internal/base/service/redisser"
-	"moodle-api/pkg/customOauth2"
 
-	"github.com/go-oauth2/oauth2/v4/models"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tdewolff/minify/v2"
@@ -35,7 +30,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/go-oauth2/oauth2/v4"
 	"github.com/go-oauth2/oauth2/v4/generates"
 )
 
@@ -600,143 +594,4 @@ func (h HTTPHandler) ProtectedToken(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, &response)
 
-}
-
-func (h HTTPHandler) AccessToken(ctx *gin.Context) {
-	var (
-		request     domain.AccessTokenRequest
-		accessToken string
-	)
-	xTimestamp := ctx.GetHeader("X-TIMESTAMP")
-	xClientKey := ctx.GetHeader("X-CLIENT-KEY")
-	xSignature := ctx.GetHeader("X-SIGNATURE")
-	contentType := ctx.GetHeader("Content-Type")
-
-	if contentType != "application/json" {
-		h.AsRequiredContentTypeError(ctx)
-		return
-	}
-
-	if len(xTimestamp) > 25 {
-		h.AsInvalidLengthTimeStampError(ctx)
-		return
-	}
-
-	if xSignature == "" {
-		h.AsRequiredSignatureError(ctx)
-		return
-	}
-
-	if xTimestamp == "" {
-		h.AsRequiredTimeStampError(ctx)
-		return
-	}
-
-	if xClientKey == "" {
-		h.AsRequiredClientIdError(ctx)
-		return
-	}
-
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		h.AsErrorDefault(ctx, err.Error())
-		return
-	}
-
-	if request.GrantType == "" {
-		h.AsRequiredGrantTypeError(ctx)
-		return
-	}
-
-	// only client_credentials grant type allowed
-	if request.GrantType != "client_credentials" {
-		h.AsRequiredGrantTypeClientCredentialsError(ctx)
-		return
-	}
-	credential, err := h.AuthService.FindCredential(ctx, xClientKey)
-	if err != nil {
-		h.AsInvalidClientIdAccessTokenError(ctx)
-		return
-	}
-	stringToSignIn := xClientKey + "|" + xTimestamp
-
-	decodedSignature, _ := base64.StdEncoding.DecodeString(xSignature)
-
-	hash := crypto.SHA256
-	shaNew := hash.New()
-	shaNew.Write([]byte(stringToSignIn))
-	hashed := shaNew.Sum(nil)
-
-	publicKey, errParse := signhelper.ParsePublicKey(credential.PublicKey)
-	if errParse != nil {
-		h.AsErrorDefault(ctx, errParse.Error())
-		return
-	}
-
-	// verify signature
-	verifyErr := rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hashed[:], decodedSignature)
-	if verifyErr != nil {
-		h.AsInvalidSignatureError(ctx)
-		return
-	}
-
-	gt := oauth2.GrantType(request.GrantType)
-
-	// check grant type
-	if allowed := h.App.Oauth2Srv.CheckGrantType(oauth2.GrantType(gt)); !allowed {
-		h.AsRequiredGrantTypeClientCredentialsError(ctx)
-		return
-	}
-
-	accessToken, errCheck := h.RedisClient.Get(ctx, "token-"+xClientKey)
-	if errCheck != nil {
-
-		// set valid credentials to session (mandatory for create access token)
-		h.App.Oauth2Client.Set(credential.ClientId, &models.Client{
-			ID:     credential.ClientId,
-			Secret: credential.ClientSecret,
-			Domain: "netzme.id",
-		})
-
-		// generate TGR (Token Generate Request) for JWT
-		tgr := &oauth2.TokenGenerateRequest{
-			ClientID:       credential.ClientId,
-			ClientSecret:   credential.ClientSecret,
-			Request:        ctx.Request,
-			AccessTokenExp: 15 * time.Hour,
-		}
-
-		//manual jwt generator
-		generator := customOauth2.NewJWTAccessGenerate(customOauth2.JWTConfig{
-			SignedKey:     []byte(os.Getenv("JWT_SECRET")),
-			SigningMethod: jwt.SigningMethodHS512,
-		})
-
-		//// generate process are handled by third party lib
-		//ti, errGenerate := h.App.Oauth2Manager.GenerateAccessToken(ctx, gt, tgr)
-
-		accessToken, errGenerate := generator.Token(ctx, tgr, false)
-
-		// check if gtr valid and token generated successfully
-		if errGenerate != nil {
-			logrus.Errorln(errGenerate)
-			return
-		}
-
-		_, errCheck = h.RedisClient.SetWithExpire(ctx, "token-"+xClientKey, accessToken, tgr.AccessTokenExp)
-		if errCheck != nil {
-			h.AsErrorDefault(ctx, "error insert token to redis")
-			logrus.Errorln(errGenerate)
-			return
-		}
-		h.AsAccessResponseSuccess(ctx, accessToken, "Bearer",
-			strconv.Itoa(int(tgr.AccessTokenExp.Seconds())), request.AdditionalInfo)
-		return
-	}
-
-	tokenExpiresIn := h.RedisClient.GetTTL(ctx, "token-"+xClientKey)
-
-	h.AsAccessResponseSuccess(ctx, accessToken, "Bearer",
-		strconv.Itoa(int(tokenExpiresIn)), request.AdditionalInfo)
-
-	return
 }

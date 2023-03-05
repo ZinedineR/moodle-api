@@ -219,7 +219,7 @@ func initHTTP() {
 	authenticationService := authService.NewService(authenticationRepo, httpClient)
 
 	baseHandler = handler.NewBaseHTTPHandler(postgresClientRepo.DB, appConf, postgresClientRepo, validate, redisClient,
-		managerOauth2, serverOauth2, httpClient, clientStoreOauth2, authenticationService)
+		httpClient, authenticationService)
 	authHandler = authenticationHandler.NewHTTPHandler(baseHandler, authenticationService, redisClient)
 	accountService := accountService.NewService(httpClient, redisClient, authenticationService)
 	accountHandler = accHandler.NewHTTPHandler(baseHandler, accountService, authenticationService, redisClient)
