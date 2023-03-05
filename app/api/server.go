@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 
-	accHandler "moodle-api/internal/account/handler"
-	authenticationHandler "moodle-api/internal/auth/handler"
 	"moodle-api/internal/base/handler"
 	priHandler "moodle-api/internal/primary/handler"
 	"moodle-api/pkg/server"
@@ -18,8 +16,6 @@ import (
 type HttpServe struct {
 	router         *gin.Engine
 	base           *handler.BaseHTTPHandler
-	auth           *authenticationHandler.HTTPHandler
-	accountHandler *accHandler.HTTPHandler
 	primaryHandler *priHandler.HTTPHandler
 }
 
@@ -34,7 +30,7 @@ func (h *HttpServe) Run() error {
 	return h.router.Run(fmt.Sprintf(":%s", os.Getenv("HTTP_SERVER_PORT")))
 }
 
-func New(appName string, base *handler.BaseHTTPHandler, auth *authenticationHandler.HTTPHandler, acc *accHandler.HTTPHandler, primary *priHandler.HTTPHandler) server.App {
+func New(appName string, base *handler.BaseHTTPHandler, primary *priHandler.HTTPHandler) server.App {
 
 	if os.Getenv("APP_ENV") != "production" {
 		if os.Getenv("DEV_SHOW_ROUTE") == "False" {
@@ -68,8 +64,6 @@ func New(appName string, base *handler.BaseHTTPHandler, auth *authenticationHand
 	return &HttpServe{
 		router:         r,
 		base:           base,
-		auth:           auth,
-		accountHandler: acc,
 		primaryHandler: primary,
 	}
 }

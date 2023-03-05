@@ -21,11 +21,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	appConfiguration "moodle-api/app/appconf"
-	accHandler "moodle-api/internal/account/handler"
-	accountService "moodle-api/internal/account/service"
-	authenticationHandler "moodle-api/internal/auth/handler"
-	authRepo "moodle-api/internal/auth/repository"
-	authService "moodle-api/internal/auth/service"
 	"moodle-api/internal/base/handler"
 	redis2 "moodle-api/internal/base/service/redisser"
 	priHandler "moodle-api/internal/primary/handler"
@@ -34,12 +29,6 @@ import (
 	"moodle-api/pkg/db"
 	"moodle-api/pkg/validation"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/go-oauth2/oauth2/v4/errors"
-	"github.com/go-oauth2/oauth2/v4/generates"
-	"github.com/go-oauth2/oauth2/v4/manage"
-	"github.com/go-oauth2/oauth2/v4/server"
-	"github.com/go-oauth2/oauth2/v4/store"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
@@ -50,16 +39,11 @@ import (
 var (
 	appConf            *appConfiguration.Config
 	baseHandler        *handler.BaseHTTPHandler
-	authHandler        *authenticationHandler.HTTPHandler
-	accountHandler     *accHandler.HTTPHandler
 	primaryHandler     *priHandler.HTTPHandler
 	redisClient        redis2.RedisClient
 	postgresClientRepo *db.PostgreSQLClientRepository
 	validate           *validator.Validate
 	httpClient         httpclient.Client
-	clientStoreOauth2  *store.ClientStore
-	serverOauth2       *server.Server
-	managerOauth2      *manage.Manager
 )
 
 func initRedisCluster() {
@@ -160,31 +144,6 @@ func initTracer() func(context.Context) error {
 	return exporter.Shutdown
 }
 
-func initOauth2() {
-	managerOauth2 = manage.NewDefaultManager()
-	managerOauth2.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
-	managerOauth2.MustTokenStorage(store.NewMemoryTokenStore())
-	managerOauth2.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte(os.Getenv("JWT_SECRET")), jwt.SigningMethodHS512))
-	// managerOauth2.MapAccessGenerate(generates.NewAccessGenerate())
-	managerOauth2.SetRefreshTokenCfg(manage.DefaultRefreshTokenCfg)
-
-	clientStoreOauth2 = store.NewClientStore()
-	managerOauth2.MapClientStorage(clientStoreOauth2)
-
-	serverOauth2 = server.NewDefaultServer(managerOauth2)
-	serverOauth2.SetAllowGetAccessRequest(true)
-	serverOauth2.SetClientInfoHandler(server.ClientFormHandler)
-
-	serverOauth2.SetInternalErrorHandler(func(err error) (re *errors.Response) {
-		fmt.Println("internal error: ", err.Error())
-		return
-	})
-
-	serverOauth2.SetResponseErrorHandler(func(re *errors.Response) {
-		log.Println("Response Error:", re.Error.Error())
-	})
-}
-
 func initPostgreSQL() {
 	host := os.Getenv("DB_HOST")
 	port, _ := strconv.Atoi(os.Getenv("DB_PORT"))
@@ -215,14 +174,8 @@ func initHTTP() {
 
 	appConf.MysqlTZ = postgresClientRepo.TZ
 
-	authenticationRepo := authRepo.NewRepository(postgresClientRepo.DB, postgresClientRepo)
-	authenticationService := authService.NewService(authenticationRepo, httpClient)
-
 	baseHandler = handler.NewBaseHTTPHandler(postgresClientRepo.DB, appConf, postgresClientRepo, validate, redisClient,
-		httpClient, authenticationService)
-	authHandler = authenticationHandler.NewHTTPHandler(baseHandler, authenticationService, redisClient)
-	accountService := accountService.NewService(httpClient, redisClient, authenticationService)
-	accountHandler = accHandler.NewHTTPHandler(baseHandler, accountService, authenticationService, redisClient)
+		httpClient)
 	primaryRepo := primaryRepo.NewRepository(postgresClientRepo.DB, postgresClientRepo)
 	primaryService := primaryService.NewService(primaryRepo, httpClient)
 	primaryHandler = priHandler.NewHTTPHandler(baseHandler, primaryService, redisClient)
@@ -243,7 +196,6 @@ func initInfrastructure() {
 	httpClientFactory := httpclient.New()
 	httpClient = httpClientFactory.CreateClient(redisClient)
 	initValidator()
-	initOauth2()
 }
 
 func initValidator() {

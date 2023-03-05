@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	authService "moodle-api/internal/auth/service"
-	"moodle-api/internal/base/domain"
 	"moodle-api/pkg/httpclient"
 
 	"github.com/sirupsen/logrus"
@@ -23,7 +21,6 @@ import (
 )
 
 type HandlerFn func(ctx *app.Context) *server.Response
-type HandlerFnPayment func(ctx *app.Context) *domain.CallbackNotificationResponse
 type HandlerFnInterface func(ctx *app.Context) *server.ResponseInterface
 
 type BaseHTTPHandler struct {
@@ -34,7 +31,6 @@ type BaseHTTPHandler struct {
 	BaseModel   *baseModel.PostgreSQLClientRepository
 	RedisClient redis.RedisClient
 	HttpClient  httpclient.Client
-	AuthService authService.Service
 }
 
 func NewBaseHTTPHandler(db *gorm.DB,
@@ -43,7 +39,6 @@ func NewBaseHTTPHandler(db *gorm.DB,
 	validate *validator.Validate,
 	redisClient redis.RedisClient,
 	httpClient httpclient.Client,
-	authService authService.Service,
 ) *BaseHTTPHandler {
 	return &BaseHTTPHandler{
 		DB:          db,
@@ -52,7 +47,6 @@ func NewBaseHTTPHandler(db *gorm.DB,
 		BaseModel:   baseModel,
 		RedisClient: redisClient,
 		HttpClient:  httpClient,
-		AuthService: authService,
 	}
 }
 
