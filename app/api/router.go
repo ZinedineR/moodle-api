@@ -7,7 +7,7 @@ import (
 )
 
 func (h *HttpServe) setupRouter() {
-	h.MoodleRoute("GET", "/primary", h.primaryHandler.ListPrimary)
+	h.MoodleRoute("GET", "/get-quiz", h.primaryHandler.GetQuiz)
 
 }
 

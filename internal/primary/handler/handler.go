@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	redis "moodle-api/internal/base/service/redisser"
 
@@ -230,10 +231,12 @@ func (h HTTPHandler) ThrowBadRequestException(ctx *app.Context, message string) 
 	return h.App.ThrowExceptionJson(ctx, http.StatusBadRequest, 0, "Bad Request", message)
 }
 
-func (h HTTPHandler) ListPrimary(ctx *app.Context) *server.ResponseInterface {
-	resp, err := h.PrimaryService.ListPrimary(ctx)
+func (h HTTPHandler) GetQuiz(ctx *app.Context) *server.ResponseInterface {
+	quiz := ctx.Query("quiz")
+	quizId, _ := strconv.Atoi(quiz)
+	resp, err := h.PrimaryService.GetQuiz(ctx, quizId)
 	if err != nil {
-		return h.AsJsonInterface(ctx, http.StatusBadRequest, resp)
+		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
 	}
 
 	return h.AsJsonInterface(ctx, http.StatusOK, resp)

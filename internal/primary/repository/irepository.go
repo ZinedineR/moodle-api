@@ -8,6 +8,5 @@ import (
 )
 
 type Repository interface {
-	ListPrimary(ctx context.Context) (*[]domain.PrimaryTableEntity, errs.Error)
-	StorePrimary(ctx context.Context, cr domain.PrimaryTableEntity) errs.Error
+	GetQuiz(ctx context.Context, quizId int) (*[]domain.GetQuizData, errs.Error)
 }
