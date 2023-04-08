@@ -8,5 +8,5 @@ import (
 )
 
 type Repository interface {
-	GetQuiz(ctx context.Context, quizId int) (*[]domain.GetQuizData, errs.Error)
+	GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, errs.Error)
 }

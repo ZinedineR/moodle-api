@@ -20,7 +20,7 @@ type service struct {
 	httpClient httpclient.Client
 }
 
-func (s service) GetQuiz(ctx context.Context, quizId int) (*[]domain.GetQuizData, errs.Error) {
+func (s service) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, errs.Error) {
 	result, err := s.authRepo.GetQuiz(ctx, quizId)
 	if err != nil {
 		return nil, err
