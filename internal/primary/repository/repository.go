@@ -32,7 +32,7 @@ func (r repo) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, err
 		Joins("JOIN mdl_question ON mdl_question.id = mdl_question_attempts.questionid").
 		Joins("left JOIN mdl_question_answers ON mdl_question.id = mdl_question_answers.question ").
 		Where("mdl_quiz.id = ?", quizId).
-		Group("mdl_user.id, mdl_user.firstname, mdl_quiz.course, mdl_course.fullname, mdl_quiz.id, mdl_quiz.name, mdl_question_attempts.questionsummary, mdl_question.questiontext, mdl_question_attempts.rightanswer").
+		Group("mdl_quiz.course, mdl_course.fullname, mdl_quiz.id, mdl_quiz.name").
 		Order("mdl_quiz.id ASC")
 
 	queryquestion := r.db.WithContext(ctx).
@@ -45,11 +45,11 @@ func (r repo) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, err
 		Joins("JOIN mdl_question ON mdl_question.id = mdl_question_attempts.questionid").
 		Joins("left JOIN mdl_question_answers ON mdl_question.id = mdl_question_answers.question ").
 		Where("mdl_quiz.id = ?", quizId).
-		Group("mdl_quiz.id, mdl_question_attempts.questionsummary, mdl_question.questiontext, mdl_question_attempts.rightanswer").
-		Order("mdl_quiz.id ASC")
+		Group("mdl_user.id, mdl_user.firstname,mdl_quiz.id, mdl_question_attempts.questionsummary, mdl_question.questiontext, mdl_question_attempts.rightanswer").
+		Order("mdl_user.id ASC")
 
 	quiz = query.
-		Select("mdl_user.id as user_id", "concat(mdl_user.firstname,' ',mdl_user.lastname) as name",
+		Select(
 			"mdl_quiz.course as course_id", "mdl_course.fullname as course_name",
 			"mdl_quiz.id as quiz_id", "mdl_quiz.name as quiz_name").
 		Take(&models)
@@ -58,7 +58,8 @@ func (r repo) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, err
 	}
 
 	question = queryquestion.
-		Select("mdl_question_attempts.questionsummary as question_summary",
+		Select("mdl_user.id as user_id", "concat(mdl_user.firstname,' ',mdl_user.lastname) as name",
+			"mdl_question_attempts.questionsummary as question_summary",
 			"mdl_question.questiontext as question_text",
 			"ARRAY_AGG(mdl_question_answers.answer ORDER BY mdl_question_answers.id) filter (where mdl_question_answers.answer is not null) AS answers",
 			"mdl_question_attempts.rightanswer as right_answer").
