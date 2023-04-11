@@ -204,6 +204,19 @@ func (h HTTPHandler) AsRequiredBodyError(ctx *gin.Context) {
 	})
 }
 
+func (h HTTPHandler) DataNotFound(ctx *app.Context) *server.ResponseInterface {
+	type Response struct {
+		StatusCode int         `json:"responseCode"`
+		Message    interface{} `json:"responseMessage"`
+	}
+	resp := Response{
+		StatusCode: http.StatusNotFound,
+		Message:    "Data not found in database.",
+	}
+	return h.App.AsJsonInterface(ctx, http.StatusNotFound, resp)
+
+}
+
 // AsJson always return httpStatus: 200, but Status field: 500,400,200...
 func (h HTTPHandler) AsJson(ctx *app.Context, status int, message string, data interface{}) *server.Response {
 	return h.App.AsJson(ctx, status, message, data)
@@ -237,6 +250,9 @@ func (h HTTPHandler) GetQuiz(ctx *app.Context) *server.ResponseInterface {
 	resp, err := h.PrimaryService.GetQuiz(ctx, quizId)
 	if err != nil {
 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+	}
+	if resp.CourseId == "" {
+		return h.DataNotFound(ctx)
 	}
 
 	return h.AsJsonInterface(ctx, http.StatusOK, resp)

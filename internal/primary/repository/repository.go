@@ -17,7 +17,7 @@ type repo struct {
 
 func (r repo) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, errs.Error) {
 	var (
-		models       domain.GetQuizData
+		models       *domain.GetQuizData
 		QuestionData []domain.QuestionData
 		quiz         *gorm.DB
 		question     *gorm.DB
@@ -52,7 +52,8 @@ func (r repo) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, err
 		Select(
 			"mdl_quiz.course as course_id", "mdl_course.fullname as course_name",
 			"mdl_quiz.id as quiz_id", "mdl_quiz.name as quiz_name").
-		Take(&models)
+		Limit(1).
+		Find(&models)
 	if quiz.Error != nil {
 		return nil, errs.Wrap(quiz.Error)
 	}
@@ -68,7 +69,7 @@ func (r repo) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, err
 		return nil, errs.Wrap(question.Error)
 	}
 	models.QuestionData = QuestionData
-	return &models, nil
+	return models, nil
 
 }
 
