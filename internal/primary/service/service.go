@@ -20,16 +20,8 @@ type service struct {
 	httpClient httpclient.Client
 }
 
-func (s service) StorePrimary(ctx context.Context, cr domain.PrimaryTableEntity) errs.Error {
-	err := s.authRepo.StorePrimary(ctx, cr)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s service) ListPrimary(ctx context.Context) (*[]domain.PrimaryTableEntity, errs.Error) {
-	result, err := s.authRepo.ListPrimary(ctx)
+func (s service) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, errs.Error) {
+	result, err := s.authRepo.GetQuiz(ctx, quizId)
 	if err != nil {
 		return nil, err
 	}
