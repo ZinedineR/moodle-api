@@ -245,9 +245,25 @@ func (h HTTPHandler) ThrowBadRequestException(ctx *app.Context, message string) 
 }
 
 func (h HTTPHandler) GetQuiz(ctx *app.Context) *server.ResponseInterface {
-	quiz := ctx.Query("quiz")
+	quiz := ctx.Param("quiz")
 	quizId, _ := strconv.Atoi(quiz)
 	resp, err := h.PrimaryService.GetQuiz(ctx, quizId)
+	if err != nil {
+		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+	}
+	if resp.CourseId == "" {
+		return h.DataNotFound(ctx)
+	}
+
+	return h.AsJsonInterface(ctx, http.StatusOK, resp)
+}
+
+func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
+	quiz := ctx.Param("quiz")
+	user := ctx.Param("user")
+	quizId, _ := strconv.Atoi(quiz)
+	userId, _ := strconv.Atoi(user)
+	resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
 	if err != nil {
 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
 	}
