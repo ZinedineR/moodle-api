@@ -27,3 +27,11 @@ func (s service) GetQuiz(ctx context.Context, quizId int) (*domain.GetQuizData, 
 	}
 	return result, nil
 }
+
+func (s service) GetQuizUser(ctx context.Context, quizId int, userId int) (*domain.GetQuizUserData, errs.Error) {
+	result, err := s.authRepo.GetQuizUser(ctx, quizId, userId)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
