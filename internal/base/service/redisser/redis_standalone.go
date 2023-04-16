@@ -19,6 +19,14 @@ func (r redisClient) Get(ctx context.Context, key string) (string, error) {
 func (r redisClient) HGet(ctx context.Context, key, field string) (string, error) {
 	stringCmd := r.Redis.HGet(ctx, key, field)
 	return stringCmd.Result()
+
+}
+
+func (r redisClient) HSet(ctx context.Context, key, field, value string) error {
+	if err := r.Redis.HSet(ctx, key, field, value).Err(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r redisClient) SetWithExpire(ctx context.Context, key string, value interface{}, second time.Duration) (string, error) {

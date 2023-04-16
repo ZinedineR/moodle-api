@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -289,11 +290,19 @@ func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
 	quizId, _ := strconv.Atoi(quiz)
 	userId, _ := strconv.Atoi(user)
 	resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+
 	if err != nil {
 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
 	}
 	if resp.CourseId == "" {
 		return h.DataNotFound(ctx)
+	}
+	out, _ := json.Marshal(resp)
+	if err != nil {
+		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+	}
+	if err := h.RedisClient.HSet(ctx, "QUIZ:"+quiz, user, string(out)); err != nil {
+		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
 	}
 
 	return h.AsJsonInterface(ctx, http.StatusOK, resp)
