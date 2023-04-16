@@ -2,8 +2,9 @@ package redisser
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type redisClient struct {
@@ -12,6 +13,11 @@ type redisClient struct {
 
 func (r redisClient) Get(ctx context.Context, key string) (string, error) {
 	stringCmd := r.Redis.Get(ctx, key)
+	return stringCmd.Result()
+}
+
+func (r redisClient) HGet(ctx context.Context, key, field string) (string, error) {
+	stringCmd := r.Redis.HGet(ctx, key, field)
 	return stringCmd.Result()
 }
 

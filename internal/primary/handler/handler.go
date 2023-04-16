@@ -258,6 +258,31 @@ func (h HTTPHandler) GetQuiz(ctx *app.Context) *server.ResponseInterface {
 	return h.AsJsonInterface(ctx, http.StatusOK, resp)
 }
 
+// func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
+// quiz := ctx.Param("quiz")
+// user := ctx.Param("user")
+// quizId, _ := strconv.Atoi(quiz)
+// userId, _ := strconv.Atoi(user)
+// Redisresp, _ := h.RedisClient.HGet(ctx, "QUIZ:4", "5")
+// out := []byte(Redisresp)
+// var Response interface{}
+// fmt.Println(Redisresp)
+// err := json.Unmarshal(out, &Response)
+// if err != nil {
+// 	return h.AsJsonInterface(ctx, http.StatusBadRequest, err.Error())
+// }
+// fmt.Println(Redisresp)
+// resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+// if err != nil {
+// 	return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+// }
+// if resp.CourseId == "" {
+// 	return h.DataNotFound(ctx)
+// }
+
+// return h.AsJsonInterface(ctx, http.StatusOK, Response)
+// }
+
 func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
 	quiz := ctx.Param("quiz")
 	user := ctx.Param("user")
