@@ -29,6 +29,16 @@ func (r redisClient) HSet(ctx context.Context, key, field, value string) error {
 	return nil
 }
 
+func (r redisClient) SetHashesExpire(ctx context.Context, key string, timeopen, timeclose int64) error {
+	convertedTimeOpen := time.Unix(timeopen, 0)
+	convertedTimeClose := time.Unix(timeclose, 0)
+	duration := convertedTimeClose.Sub(convertedTimeOpen)
+	if err := r.Redis.Expire(ctx, key, duration).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r redisClient) SetWithExpire(ctx context.Context, key string, value interface{}, second time.Duration) (string, error) {
 	statusCmd := r.Redis.Set(ctx, key, value, second)
 	return statusCmd.Result()
