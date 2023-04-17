@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	redis "moodle-api/internal/base/service/redisser"
 
+	"moodle-api/internal/primary/domain"
 	primaryService "moodle-api/internal/primary/service"
 
 	"moodle-api/internal/base/app"
@@ -204,6 +206,7 @@ func (h HTTPHandler) AsRequiredBodyError(ctx *gin.Context) {
 	})
 }
 
+// Data Not Found return AsJsonInterface 404 when data doesn't exist
 func (h HTTPHandler) DataNotFound(ctx *app.Context) *server.ResponseInterface {
 	type Response struct {
 		StatusCode int         `json:"responseCode"`
@@ -212,6 +215,33 @@ func (h HTTPHandler) DataNotFound(ctx *app.Context) *server.ResponseInterface {
 	resp := Response{
 		StatusCode: http.StatusNotFound,
 		Message:    "Data not found in database.",
+	}
+	return h.App.AsJsonInterface(ctx, http.StatusNotFound, resp)
+
+}
+
+// DataReadError return AsJsonInterface error if persist a problem in encoding/decoding JSON data
+func (h HTTPHandler) DataReadError(ctx *app.Context, description string) *server.ResponseInterface {
+	type Response struct {
+		StatusCode int         `json:"responseCode"`
+		Message    interface{} `json:"responseMessage"`
+	}
+	resp := Response{
+		StatusCode: http.StatusUnsupportedMediaType,
+		Message:    description,
+	}
+	return h.App.AsJsonInterface(ctx, http.StatusNotFound, resp)
+}
+
+// RedisWriteError return AsJsonInterface error if persist a problem in writing data to Redis
+func (h HTTPHandler) RedisWriteError(ctx *app.Context, description string) *server.ResponseInterface {
+	type Response struct {
+		StatusCode int         `json:"responseCode"`
+		Message    interface{} `json:"responseMessage"`
+	}
+	resp := Response{
+		StatusCode: http.StatusUnsupportedMediaType,
+		Message:    description,
 	}
 	return h.App.AsJsonInterface(ctx, http.StatusNotFound, resp)
 
@@ -259,17 +289,60 @@ func (h HTTPHandler) GetQuiz(ctx *app.Context) *server.ResponseInterface {
 }
 
 func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
+	//Declaring Variables
+	var Response domain.GetQuizUserData
 	quiz := ctx.Param("quiz")
 	user := ctx.Param("user")
 	quizId, _ := strconv.Atoi(quiz)
 	userId, _ := strconv.Atoi(user)
-	resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+	//Getting data from Redis
+	Redisresp, _ := h.RedisClient.HGet(ctx, "QUIZ:"+quiz, user)
+	if Redisresp == "" {
+		resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+		if err != nil {
+			return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+		}
+		if resp.CourseId == "" {
+			return h.DataNotFound(ctx)
+		}
+		converter, error := json.Marshal(resp)
+		if error != nil {
+			return h.DataReadError(ctx, error.Error())
+		}
+		if err := h.RedisClient.HSet(ctx, "QUIZ:"+quiz, user, string(converter)); err != nil {
+			return h.RedisWriteError(ctx, err.Error())
+		}
+		return h.AsJsonInterface(ctx, http.StatusOK, resp)
+	}
+	converter := []byte(Redisresp)
+	err := json.Unmarshal(converter, &Response)
 	if err != nil {
-		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+		return h.DataReadError(ctx, err.Error())
 	}
-	if resp.CourseId == "" {
-		return h.DataNotFound(ctx)
-	}
+	return h.AsJsonInterface(ctx, http.StatusOK, Response)
 
-	return h.AsJsonInterface(ctx, http.StatusOK, resp)
 }
+
+// func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
+// 	quiz := ctx.Param("quiz")
+// 	user := ctx.Param("user")
+// 	quizId, _ := strconv.Atoi(quiz)
+// 	userId, _ := strconv.Atoi(user)
+// 	resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+
+// 	if err != nil {
+// 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+// 	}
+// 	if resp.CourseId == "" {
+// 		return h.DataNotFound(ctx)
+// 	}
+// 	out, _ := json.Marshal(resp)
+// 	if err != nil {
+// 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+// 	}
+// 	if err := h.RedisClient.HSet(ctx, "QUIZ:"+quiz, user, string(out)); err != nil {
+// 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+// 	}
+
+// 	return h.AsJsonInterface(ctx, http.StatusOK, resp)
+// }

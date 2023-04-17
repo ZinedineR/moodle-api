@@ -46,22 +46,22 @@ var (
 	httpClient         httpclient.Client
 )
 
-func initRedisCluster() {
-	var ctx = context.TODO()
-	redisHostList := strings.Split(os.Getenv("REDIS_HOST_CLUSTER"), ",")
-	r := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:       redisHostList,
-		MaxRetries:  3,
-		DialTimeout: 10 * time.Second,
-	})
-	err := r.Ping(ctx).Err()
-	if err != nil {
-		log.Fatal(err)
-	}
+// func initRedisCluster() {
+// 	var ctx = context.TODO()
+// 	redisHostList := strings.Split(os.Getenv("REDIS_HOST_CLUSTER"), ",")
+// 	r := redis.NewClusterClient(&redis.ClusterOptions{
+// 		Addrs:       redisHostList,
+// 		MaxRetries:  3,
+// 		DialTimeout: 10 * time.Second,
+// 	})
+// 	err := r.Ping(ctx).Err()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	log.Print("Redis Cluster ping successful")
-	redisClient = redis2.NewRedisClusterClient(r)
-}
+// 	log.Print("Redis Cluster ping successful")
+// 	redisClient = redis2.NewRedisClusterClient(r)
+// }
 
 func initRedisSentinel() {
 	var ctx = context.TODO()
@@ -182,15 +182,15 @@ func initHTTP() {
 }
 
 func initInfrastructure() {
-	useRedisCluster := os.Getenv("USE_REDIS_CLUSTER")
-	if useRedisCluster == "true" {
-		initRedisCluster()
-		initRedisSentinel()
-	} else if useRedisCluster == "false" {
-		initRedis()
-	} else {
-		log.Panic("Input either true or false on USE_REDIS_CLUSTER env")
-	}
+	// useRedisCluster := os.Getenv("USE_REDIS_CLUSTER")
+	// if useRedisCluster == "true" {
+	// 	// initRedisCluster()
+	// 	initRedisSentinel()
+	// } else if useRedisCluster == "false" {
+	initRedis()
+	// } else {
+	// 	log.Panic("Input either true or false on USE_REDIS_CLUSTER env")
+	// }
 	initPostgreSQL()
 	initLog()
 	httpClientFactory := httpclient.New()

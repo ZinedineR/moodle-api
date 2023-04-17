@@ -20,6 +20,8 @@ type QuestionData struct {
 }
 
 type GetQuizUserData struct {
+	TimeOpen     int64              `json:"time_open"`
+	TimeClose    int64              `json:"time_close"`
 	CourseId     string             `json:"course_id"`
 	CourseName   string             `json:"course_name"`
 	QuizId       string             `json:"quiz_id"`
