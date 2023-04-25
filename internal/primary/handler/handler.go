@@ -341,5 +341,4 @@ func (h HTTPHandler) GetQuizUserSQL(ctx *app.Context) *server.ResponseInterface 
 		return h.DataNotFound(ctx)
 	}
 	return h.AsJsonInterface(ctx, http.StatusOK, resp)
-
 }
