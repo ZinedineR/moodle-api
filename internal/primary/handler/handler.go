@@ -288,7 +288,7 @@ func (h HTTPHandler) GetQuiz(ctx *app.Context) *server.ResponseInterface {
 	return h.AsJsonInterface(ctx, http.StatusOK, resp)
 }
 
-func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
+func (h HTTPHandler) GetQuizUserRedis(ctx *app.Context) *server.ResponseInterface {
 	//Declaring Variables
 	var Response domain.GetQuizUserData
 	quiz := ctx.Param("quiz")
@@ -326,26 +326,20 @@ func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
 
 }
 
-// func (h HTTPHandler) GetQuizUser(ctx *app.Context) *server.ResponseInterface {
-// 	quiz := ctx.Param("quiz")
-// 	user := ctx.Param("user")
-// 	quizId, _ := strconv.Atoi(quiz)
-// 	userId, _ := strconv.Atoi(user)
-// 	resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+func (h HTTPHandler) GetQuizUserSQL(ctx *app.Context) *server.ResponseInterface {
+	//Declaring Variables
+	quiz := ctx.Param("quiz")
+	user := ctx.Param("user")
+	quizId, _ := strconv.Atoi(quiz)
+	userId, _ := strconv.Atoi(user)
 
-// 	if err != nil {
-// 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
-// 	}
-// 	if resp.CourseId == "" {
-// 		return h.DataNotFound(ctx)
-// 	}
-// 	out, _ := json.Marshal(resp)
-// 	if err != nil {
-// 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
-// 	}
-// 	if err := h.RedisClient.HSet(ctx, "QUIZ:"+quiz, user, string(out)); err != nil {
-// 		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
-// 	}
+	resp, err := h.PrimaryService.GetQuizUser(ctx, quizId, userId)
+	if err != nil {
+		return h.AsJsonInterface(ctx, http.StatusBadRequest, err)
+	}
+	if resp.CourseId == "" {
+		return h.DataNotFound(ctx)
+	}
+	return h.AsJsonInterface(ctx, http.StatusOK, resp)
 
-// 	return h.AsJsonInterface(ctx, http.StatusOK, resp)
-// }
+}
