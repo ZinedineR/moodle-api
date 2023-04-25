@@ -13,7 +13,7 @@ var (
 	slash      = []byte("/")
 	dot        = []byte(".")
 	centerDot  = []byte(".")
-	pathPrefix = "/go/src/github.com/netzmeapp/ultraman"
+	pathPrefix = "/go/src/github.com/ZinedineR/moodle-api"
 )
 
 func StackAndFile(skip int) (string, string) {

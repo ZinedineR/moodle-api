@@ -7,18 +7,8 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
-	"time"
 
 	"moodle-api/pkg/httpclient"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"google.golang.org/grpc/credentials"
 
 	appConfiguration "moodle-api/app/appconf"
 	"moodle-api/internal/base/handler"
@@ -63,29 +53,29 @@ var (
 // 	redisClient = redis2.NewRedisClusterClient(r)
 // }
 
-func initRedisSentinel() {
-	var ctx = context.TODO()
+// func initRedisSentinel() {
+// 	var ctx = context.TODO()
 
-	redisSentinelHost := strings.Split(os.Getenv("REDIS_SENTINEL_HOST"), ",")
+// 	redisSentinelHost := strings.Split(os.Getenv("REDIS_SENTINEL_HOST"), ",")
 
-	r := redis.NewFailoverClusterClient(&redis.FailoverOptions{
-		MasterName:    "mymaster",
-		SentinelAddrs: redisSentinelHost,
-		MaxRetries:    3,
-		DialTimeout:   10 * time.Second,
+// 	r := redis.NewFailoverClusterClient(&redis.FailoverOptions{
+// 		MasterName:    "mymaster",
+// 		SentinelAddrs: redisSentinelHost,
+// 		MaxRetries:    3,
+// 		DialTimeout:   10 * time.Second,
 
-		// To route commands by latency or randomly, enable one of the following.
-		RouteByLatency: true,
-		//RouteRandomly: true,
-	})
+// 		// To route commands by latency or randomly, enable one of the following.
+// 		RouteByLatency: true,
+// 		//RouteRandomly: true,
+// 	})
 
-	err := r.Ping(ctx).Err()
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	err := r.Ping(ctx).Err()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	log.Print("Redis Sentinel ping successful")
-}
+// 	log.Print("Redis Sentinel ping successful")
+// }
 
 func initRedis() {
 	var ctx = context.TODO()
@@ -102,46 +92,6 @@ func initRedis() {
 	}
 
 	redisClient = redis2.NewRedisClient(r)
-}
-
-func initTracer() func(context.Context) error {
-	secureOption := otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
-	if len(os.Getenv("INSECURE_MODE")) > 0 {
-		secureOption = otlptracegrpc.WithInsecure()
-	}
-
-	exporter, err := otlptrace.New(
-		context.Background(),
-		otlptracegrpc.NewClient(
-			secureOption,
-			otlptracegrpc.WithEndpoint(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
-		),
-	)
-
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	resources, err := resource.New(
-		context.Background(),
-		resource.WithAttributes(
-			attribute.String("service.name", os.Getenv("SERVICE_NAME")),
-			attribute.String("library.language", "go"),
-		),
-	)
-
-	if err != nil {
-		logrus.Printf("Could not set resources: ", err)
-	}
-
-	otel.SetTracerProvider(
-		sdktrace.NewTracerProvider(
-			sdktrace.WithSampler(sdktrace.AlwaysSample()),
-			sdktrace.WithBatcher(exporter),
-			sdktrace.WithResource(resources),
-		),
-	)
-	return exporter.Shutdown
 }
 
 func initPostgreSQL() {
