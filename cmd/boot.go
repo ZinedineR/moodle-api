@@ -17,9 +17,7 @@ import (
 	primaryRepo "moodle-api/internal/primary/repository"
 	primaryService "moodle-api/internal/primary/service"
 	"moodle-api/pkg/db"
-	"moodle-api/pkg/validation"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -32,7 +30,6 @@ var (
 	primaryHandler     *priHandler.HTTPHandler
 	redisClient        redis2.RedisClient
 	postgresClientRepo *db.PostgreSQLClientRepository
-	validate           *validator.Validate
 	httpClient         httpclient.Client
 )
 
@@ -124,7 +121,7 @@ func initHTTP() {
 
 	appConf.MysqlTZ = postgresClientRepo.TZ
 
-	baseHandler = handler.NewBaseHTTPHandler(postgresClientRepo.DB, appConf, postgresClientRepo, validate, redisClient,
+	baseHandler = handler.NewBaseHTTPHandler(postgresClientRepo.DB, appConf, postgresClientRepo, redisClient,
 		httpClient)
 	primaryRepo := primaryRepo.NewRepository(postgresClientRepo.DB, postgresClientRepo)
 	primaryService := primaryService.NewService(primaryRepo, httpClient)
@@ -145,12 +142,6 @@ func initInfrastructure() {
 	initLog()
 	httpClientFactory := httpclient.New()
 	httpClient = httpClientFactory.CreateClient(redisClient)
-	initValidator()
-}
-
-func initValidator() {
-	validate = validator.New()
-	validation.ExtendValidator(validate)
 }
 
 func isProd() bool {

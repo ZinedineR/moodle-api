@@ -16,7 +16,6 @@ import (
 	"moodle-api/pkg/server"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +26,6 @@ type BaseHTTPHandler struct {
 	Handlers    interface{}
 	DB          *gorm.DB
 	AppConfig   *appconf.Config
-	Validate    *validator.Validate
 	BaseModel   *baseModel.PostgreSQLClientRepository
 	RedisClient redis.RedisClient
 	HttpClient  httpclient.Client
@@ -36,14 +34,12 @@ type BaseHTTPHandler struct {
 func NewBaseHTTPHandler(db *gorm.DB,
 	appConfig *appconf.Config,
 	baseModel *baseModel.PostgreSQLClientRepository,
-	validate *validator.Validate,
 	redisClient redis.RedisClient,
 	httpClient httpclient.Client,
 ) *BaseHTTPHandler {
 	return &BaseHTTPHandler{
 		DB:          db,
 		AppConfig:   appConfig,
-		Validate:    validate,
 		BaseModel:   baseModel,
 		RedisClient: redisClient,
 		HttpClient:  httpClient,
