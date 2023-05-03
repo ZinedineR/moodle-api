@@ -312,8 +312,10 @@ func (h HTTPHandler) GetQuizUserRedis(ctx *app.Context) *server.ResponseInterfac
 		if err := h.RedisClient.HSet(ctx, "QUIZ:"+quiz, user, string(converter)); err != nil {
 			return h.RedisWriteError(ctx, err.Error())
 		}
-		if err := h.RedisClient.SetHashesExpire(ctx, "QUIZ:"+quiz, resp.TimeOpen, resp.TimeClose); err != nil {
-			return h.RedisWriteError(ctx, err.Error())
+		if resp.TimeClose != 0 {
+			if err := h.RedisClient.SetHashesExpire(ctx, "QUIZ:"+quiz, resp.TimeOpen, resp.TimeClose); err != nil {
+				return h.RedisWriteError(ctx, err.Error())
+			}
 		}
 		return h.AsJsonInterface(ctx, http.StatusOK, resp)
 	}

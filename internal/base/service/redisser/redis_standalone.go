@@ -30,6 +30,9 @@ func (r redisClient) HSet(ctx context.Context, key, field, value string) error {
 }
 
 func (r redisClient) SetHashesExpire(ctx context.Context, key string, timeopen, timeclose int64) error {
+	if timeclose == 0 {
+		timeopen = 0
+	}
 	convertedTimeOpen := time.Unix(timeopen, 0)
 	convertedTimeClose := time.Unix(timeclose, 0)
 	duration := convertedTimeClose.Sub(convertedTimeOpen)
