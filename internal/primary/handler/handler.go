@@ -317,7 +317,7 @@ func (h HTTPHandler) GetQuizUserRedis(ctx *app.Context) *server.ResponseInterfac
 				return h.RedisWriteError(ctx, err.Error())
 			}
 		}
-		return h.AsJsonInterface(ctx, http.StatusOK, resp)
+		return h.AsJsonInterface(ctx, http.StatusAccepted, resp)
 	}
 	converter := []byte(Redisresp)
 	err := json.Unmarshal(converter, &Response)
@@ -342,5 +342,5 @@ func (h HTTPHandler) GetQuizUserSQL(ctx *app.Context) *server.ResponseInterface 
 	if resp.CourseId == "" {
 		return h.DataNotFound(ctx)
 	}
-	return h.AsJsonInterface(ctx, http.StatusOK, resp)
+	return h.AsJsonInterface(ctx, http.StatusAccepted, resp)
 }
